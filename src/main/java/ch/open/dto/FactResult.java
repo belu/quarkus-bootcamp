@@ -1,5 +1,7 @@
 package ch.open.dto;
 
+import ch.open.repository.Fact;
+
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -17,6 +19,10 @@ public class FactResult {
         this.id = id;
         this.timestamp = timestamp;
         this.statement = statement;
+    }
+
+    public static FactResult from(Fact fact) {
+        return new FactResult(fact.id, fact.timestamp, fact.statement);
     }
 
     @Override

@@ -2,38 +2,41 @@ package ch.open.service;
 
 import ch.open.dto.FactResult;
 import ch.open.dto.NewFact;
+import ch.open.repository.Fact;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class FactService {
 
-    private final List<FactResult> facts = new CopyOnWriteArrayList<>();
-
-    private final AtomicLong nextId = new AtomicLong();
-
     public List<FactResult> getFacts() {
-        return facts;
+        return Fact.<Fact>streamAll()
+            .map(FactResult::from)
+            .collect(Collectors.toUnmodifiableList());
     }
 
+    @Transactional
     public FactResult addFact(NewFact newFact) {
-        var factResult = new FactResult(nextId.incrementAndGet(), LocalDateTime.now(), newFact.statement);
-        facts.add(factResult);
-        return factResult;
+        var fact = new Fact();
+        fact.timestamp = LocalDateTime.now();
+        fact.statement = newFact.statement;
+        fact.persist();
+
+        return FactResult.from(fact);
     }
 
     public Optional<FactResult> getFactById(long id) {
-        return facts.stream()
-            .filter(f -> f.id == id)
-            .findAny();
+        return Fact.<Fact>findByIdOptional(id)
+            .map(FactResult::from);
     }
 
+    @Transactional
     public void reset() {
-        facts.clear();
+        Fact.deleteAll();
     }
 }
