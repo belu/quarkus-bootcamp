@@ -3,6 +3,8 @@ package ch.open.resource;
 import ch.open.dto.FactResult;
 import ch.open.dto.NewFact;
 import ch.open.service.FactService;
+import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -21,21 +23,29 @@ public class FactResource {
     @Inject
     FactService factService;
 
+    @Inject
+    MeterRegistry meterRegistry;
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<FactResult> getFacts() {
+        meterRegistry.counter("endpoint_get_facts").increment();
+
         return factService.getFacts();
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public FactResult addFact(NewFact newFact) {
+        meterRegistry.counter("endpoint_add_fact").increment();
+
         return factService.addFact(newFact);
     }
 
     @GET
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Counted
     public Response getFactById(@PathParam("id") long id) {
         return factService.getFactById(id)
             .map(f -> Response.ok(f).build())
