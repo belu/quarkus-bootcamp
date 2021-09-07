@@ -3,6 +3,7 @@ package ch.open.service;
 import ch.open.dto.FactResult;
 import ch.open.dto.NewFact;
 import ch.open.repository.Fact;
+import io.quarkus.panache.common.Sort;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.transaction.Transactional;
@@ -14,8 +15,9 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class FactService {
 
-    public List<FactResult> getFacts() {
-        return Fact.<Fact>streamAll()
+    public List<FactResult> getFacts(int limit) {
+        return Fact.<Fact>streamAll(Sort.descending("timestamp"))
+            .limit(limit)
             .map(FactResult::from)
             .collect(Collectors.toUnmodifiableList());
     }

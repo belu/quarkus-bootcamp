@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,11 +31,66 @@ class FactResourceTest {
     }
 
     @Test
-    public void getFacts() {
+    public void getFacts_limitAboveTotal() {
+        // given
+        var limit = 5;
+
+        addFact("Fact 1");
+        addFact("Fact 2");
+        addFact("Fact 3");
+
+        // when
+        var facts = given()
+            .queryParam("limit", limit)
+            .when().get()
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .extract()
+            .as(new TypeRef<List<FactResult>>() {
+            });
+
+        // then
+        assertThat(facts).hasSize(3);
+
+        var actualFacts = facts.stream().map(fact -> fact.statement).collect(Collectors.toUnmodifiableList());
+        assertThat(actualFacts).containsExactly("Fact 3", "Fact 2", "Fact 1");
+    }
+
+    @Test
+    public void getFacts_limitBelowTotal() {
+        // given
+        var limit = 2;
+
+        addFact("Fact 1");
+        addFact("Fact 2");
+        addFact("Fact 3");
+        addFact("Fact 4");
+        addFact("Fact 5");
+
+        // when
+        var facts = given()
+            .queryParam("limit", limit)
+            .when().get()
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .extract()
+            .as(new TypeRef<List<FactResult>>() {
+            });
+
+        // then
+        assertThat(facts).hasSize(2);
+
+        var actualFacts = facts.stream().map(fact -> fact.statement).collect(Collectors.toUnmodifiableList());
+        assertThat(actualFacts).containsExactly("Fact 5", "Fact 4");
+    }
+
+    @Test
+    public void getFacts_defaultLimit() {
         // given
         addFact("Fact 1");
         addFact("Fact 2");
         addFact("Fact 3");
+        addFact("Fact 4");
 
         // when
         var facts = given()
@@ -51,7 +105,7 @@ class FactResourceTest {
         assertThat(facts).hasSize(3);
 
         var actualFacts = facts.stream().map(fact -> fact.statement).collect(Collectors.toUnmodifiableList());
-        assertThat(actualFacts).containsExactly("Fact 1", "Fact 2", "Fact 3");
+        assertThat(actualFacts).containsExactly("Fact 4", "Fact 3", "Fact 2");
     }
 
     @Test
@@ -68,7 +122,7 @@ class FactResourceTest {
             .statusCode(HttpStatus.SC_OK);
 
         // then
-        var facts = factService.getFacts();
+        var facts = factService.getFacts(1);
         assertThat(facts).hasSize(1);
 
         var actualFacts = facts.stream().map(fact -> fact.statement).collect(Collectors.toUnmodifiableList());
